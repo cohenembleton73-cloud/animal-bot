@@ -15,7 +15,7 @@ from datetime import datetime, UTC
 
 TOKEN = os.getenv("TOKEN")
 
-SERVER_ID = 123456789012345678  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
+SERVER_ID = 1467283531301392559  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
 CHANNEL_ID = 1471171197290152099
 
 TEST_MODE = True  # False = real @everyone
@@ -26,7 +26,7 @@ APPLE_LOOKUP = f"https://itunes.apple.com/lookup?bundleId={APPLE_BUNDLE_ID}"
 DECRYPT_URL = "https://decrypt.day/app/id6741173617"
 
 # =========================
-# RENDER KEEP ALIVE
+# RENDER KEEP-ALIVE SERVER
 # =========================
 
 app = Flask(__name__)
@@ -124,7 +124,7 @@ def build_decrypt_embed(old, new):
     return embed
 
 # =========================
-# SLASH COMMANDS (INSTANT GUILD SYNC)
+# SLASH COMMANDS (GUILD ONLY = INSTANT)
 # =========================
 
 @bot.tree.command(name="test", description="Simulate update embed", guild=guild)
@@ -134,6 +134,7 @@ def build_decrypt_embed(old, new):
     app_commands.Choice(name="Decrypt", value="decrypt")
 ])
 async def test(interaction: discord.Interaction, type: app_commands.Choice[str]):
+
     if type.value == "apple":
         embed = build_apple_embed("59.0", "60.0")
     else:
@@ -166,7 +167,7 @@ async def forcecheck(interaction: discord.Interaction):
     await interaction.followup.send("Manual check complete.")
 
 # =========================
-# UPDATE SYSTEM
+# UPDATE LOOP
 # =========================
 
 async def run_update_check(force=False):
@@ -232,23 +233,6 @@ async def on_ready():
         print(f"Synced {len(synced)} commands to guild.")
     except Exception as e:
         print("SYNC FAILED:", e)
-
-    bot.loop.create_task(check_updates())
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user}")
-
-    guild = discord.Object(id=SERVER_ID)
-
-    # REMOVE ALL GLOBAL COMMANDS
-    bot.tree.clear_commands()
-    await bot.tree.sync()
-
-    # REMOVE ALL GUILD COMMANDS
-    bot.tree.clear_commands(guild=guild)
-    await bot.tree.sync(guild=guild)
-
-    print("All slash commands wiped.")
 
     bot.loop.create_task(check_updates())
 
