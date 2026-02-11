@@ -15,7 +15,7 @@ from datetime import datetime, UTC
 
 TOKEN = os.getenv("TOKEN")
 
-SERVER_ID = 1467283531301392559  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
+SERVER_ID = 123456789012345678  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
 CHANNEL_ID = 1471171197290152099
 
 TEST_MODE = True  # False = real @everyone
@@ -240,6 +240,3 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
-
-
-
