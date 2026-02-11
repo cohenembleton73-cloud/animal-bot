@@ -71,11 +71,13 @@ def get_decrypt_version():
     try:
         r = requests.get(DECRYPT_URL, headers=HEADERS, timeout=10)
 
-        # specifically match version format like 1.59.4.2297
-        match = re.search(r"\d+\.\d+\.\d+\.\d+", r.text)
-        if match:
-            return match.group(0)
+        # Match the Version label specifically
+        match = re.search(r"Version\s*</[^>]+>\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", r.text)
 
+        if match:
+            return match.group(1)
+
+        print("Decrypt version not found near label.")
     except Exception as e:
         print("Decrypt fetch error:", e)
 
@@ -162,8 +164,12 @@ async def check_updates():
 # COMMANDS
 # =========================
 
+from discord.ext.commands import cooldown, BucketType
+
 @bot.command()
+@cooldown(3, 5, BucketType.channel)  # max 3 uses per 5 seconds per channel
 async def status(ctx):
+
     apple_v = get_appstore_version()
     decrypt_v = get_decrypt_version()
 
@@ -201,6 +207,7 @@ async def on_ready():
         check_updates.start()
 
 bot.run(TOKEN)
+
 
 
 
