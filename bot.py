@@ -234,9 +234,27 @@ async def on_ready():
         print("SYNC FAILED:", e)
 
     bot.loop.create_task(check_updates())
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+
+    guild = discord.Object(id=SERVER_ID)
+
+    # REMOVE ALL GLOBAL COMMANDS
+    bot.tree.clear_commands()
+    await bot.tree.sync()
+
+    # REMOVE ALL GUILD COMMANDS
+    bot.tree.clear_commands(guild=guild)
+    await bot.tree.sync(guild=guild)
+
+    print("All slash commands wiped.")
+
+    bot.loop.create_task(check_updates())
 
 # =========================
 # START
 # =========================
 
 bot.run(TOKEN)
+
