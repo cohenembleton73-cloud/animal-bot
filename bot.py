@@ -127,23 +127,9 @@ def build_decrypt_embed(old, new):
 # SLASH COMMANDS (GUILD ONLY = INSTANT)
 # =========================
 
-@bot.tree.command(name="test", description="Simulate update embed", guild=guild)
-@app_commands.describe(type="Choose update type")
-@app_commands.choices(type=[
-    app_commands.Choice(name="Apple", value="apple"),
-    app_commands.Choice(name="Decrypt", value="decrypt")
-])
-async def test(interaction: discord.Interaction, type: app_commands.Choice[str]):
-
-    await interaction.response.defer()
-
-    if type.value == "apple":
-        embed = build_apple_embed("59.0", "60.0")
-    else:
-        embed = build_decrypt_embed("59.0", "60.0")
-
-    await interaction.followup.send(embed=embed)
-
+@bot.tree.command(name="test", description="Test command", guild=guild)
+async def test(interaction: discord.Interaction):
+    await interaction.response.send_message("Bot is responding properly.")
 
 @bot.tree.command(name="status", description="Check tracker status", guild=guild)
 async def status(interaction: discord.Interaction):
@@ -243,5 +229,6 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
+
 
 
