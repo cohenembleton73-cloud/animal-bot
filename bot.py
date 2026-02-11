@@ -53,15 +53,15 @@ initialised = False
 # VERSION FETCHERS
 # =========================
 
+APPLE_LOOKUP = "https://itunes.apple.com/lookup?id=6741173617"
+
+
 def get_appstore_version():
     try:
         r = requests.get(APPLE_LOOKUP, headers=HEADERS, timeout=10)
-        print("Apple status:", r.status_code)
         data = r.json()
         if data.get("resultCount", 0) > 0:
             return data["results"][0]["version"]
-        else:
-            print("Apple returned 0 results")
     except Exception as e:
         print("Apple fetch error:", e)
     return None
@@ -70,17 +70,17 @@ def get_appstore_version():
 def get_decrypt_version():
     try:
         r = requests.get(DECRYPT_URL, headers=HEADERS, timeout=10)
-        print("Decrypt status:", r.status_code)
 
-        # More flexible regex
-        match = re.search(r"([0-9]+\.[0-9]+(\.[0-9]+)?)", r.text)
+        # specifically match version format like 1.59.4.2297
+        match = re.search(r"\d+\.\d+\.\d+\.\d+", r.text)
         if match:
-            return match.group(1)
-        else:
-            print("Decrypt regex failed")
+            return match.group(0)
+
     except Exception as e:
         print("Decrypt fetch error:", e)
+
     return None
+
 
 # =========================
 # EMBEDS
@@ -173,18 +173,22 @@ async def status(ctx):
         timestamp=datetime.utcnow()
     )
 
-    embed.add_field(name="🍎 App Store", value=f"`{apple_v or 'Unavailable'}`", inline=False)
-    embed.add_field(name="🔓 decrypt.day", value=f"`{decrypt_v or 'Unavailable'}`", inline=False)
+    embed.add_field(
+        name="🍎 App Store",
+        value=f"`{apple_v or 'Unavailable'}`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔓 decrypt.day",
+        value=f"`{decrypt_v or 'Unavailable'}`",
+        inline=False
+    )
 
     embed.set_footer(text="Real-time version check")
 
     await ctx.send(embed=embed)
 
-@bot.command()
-async def forcecheck(ctx):
-    await ctx.send("Manual check started...")
-    await check_updates()
-    await ctx.send("Manual check complete.")
 
 # =========================
 # READY
@@ -197,6 +201,7 @@ async def on_ready():
         check_updates.start()
 
 bot.run(TOKEN)
+
 
 
 
