@@ -5,12 +5,13 @@ import re
 import os
 from flask import Flask
 import threading
+from datetime import datetime
 
 # =========================
 # SETTINGS
 # =========================
 
-TEST_MODE = True  # 🔔 Set to False when you want real @everyone pings
+TEST_MODE = True  # Set to False for real @everyone pings
 
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = 1471171197290152099
@@ -49,7 +50,7 @@ last_apple_version = None
 last_decrypt_version = None
 
 # =========================
-# VERSION FUNCTIONS
+# VERSION FETCHERS
 # =========================
 
 def get_appstore_version():
@@ -74,30 +75,62 @@ def get_decrypt_version():
     return None
 
 # =========================
-# EMBED BUILDERS
+# EMBED BUILDERS (ULTRA CLEAN)
 # =========================
 
 def build_apple_embed(old, new):
     embed = discord.Embed(
         title="🍎 App Store Update Detected",
-        description=f"**Animal Company Companion**",
-        color=0x00B2FF
+        description="**Animal Company Companion**",
+        color=0x1DA1F2,
+        timestamp=datetime.utcnow()
     )
-    embed.add_field(name="Version Change", value=f"V{old} → V{new}", inline=False)
-    embed.add_field(name="Status", value="🔄 decrypt.day release coming soon...", inline=False)
-    embed.add_field(name="App Store", value="https://apps.apple.com/app/id6741173617", inline=False)
-    embed.set_footer(text="Animal Update Tracker")
+
+    embed.add_field(
+        name="📦 Version Upgrade",
+        value=f"```V{old}  ➜  V{new}```",
+        inline=False
+    )
+
+    embed.add_field(
+        name="⏳ Status",
+        value="decrypt.day release expected soon...",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔗 App Store",
+        value="[View on App Store](https://apps.apple.com/app/id6741173617)",
+        inline=False
+    )
+
+    embed.set_footer(text="Animal Update Tracker • Monitoring Live")
+
     return embed
+
 
 def build_decrypt_embed(old, new):
     embed = discord.Embed(
         title="🔓 NOW LIVE ON DECRYPT.DAY",
-        description="Download is officially available 🚀",
-        color=0x00FF66
+        description="**Animal Company Companion is ready to download.**",
+        color=0x00FF88,
+        timestamp=datetime.utcnow()
     )
-    embed.add_field(name="Version Change", value=f"V{old} → V{new}", inline=False)
-    embed.add_field(name="Download", value=DECRYPT_URL, inline=False)
-    embed.set_footer(text="Animal Update Tracker")
+
+    embed.add_field(
+        name="📦 Version Upgrade",
+        value=f"```V{old}  ➜  V{new}```",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🚀 Download Now",
+        value=f"[Click here to download]({DECRYPT_URL})",
+        inline=False
+    )
+
+    embed.set_footer(text="Animal Update Tracker • Release Confirmed")
+
     return embed
 
 # =========================
@@ -118,7 +151,7 @@ async def check_updates():
                 elif app_v != last_apple_version:
                     embed = build_apple_embed(last_apple_version, app_v)
                     if TEST_MODE:
-                        await channel.send("🧪 TEST MODE (No ping)", embed=embed)
+                        await channel.send(embed=embed)
                     else:
                         await channel.send("@everyone", embed=embed)
                     last_apple_version = app_v
@@ -130,7 +163,7 @@ async def check_updates():
                 elif dec_v != last_decrypt_version:
                     embed = build_decrypt_embed(last_decrypt_version, dec_v)
                     if TEST_MODE:
-                        await channel.send("🧪 TEST MODE (No ping)", embed=embed)
+                        await channel.send(embed=embed)
                     else:
                         await channel.send("@everyone", embed=embed)
                     last_decrypt_version = dec_v
@@ -151,15 +184,15 @@ async def on_message(message):
 
     if message.content == "!test apple":
         embed = build_apple_embed("59.0", "60.0")
-        await message.channel.send("🧪 Apple Preview", embed=embed)
+        await message.channel.send(embed=embed)
 
     if message.content == "!test decrypt":
         embed = build_decrypt_embed("59.0", "60.0")
-        await message.channel.send("🧪 decrypt.day Preview", embed=embed)
+        await message.channel.send(embed=embed)
 
     if message.content == "!status":
         await message.channel.send(
-            f"📊 Current Stored Versions:\n"
+            f"📊 Current Versions:\n"
             f"Apple: {last_apple_version}\n"
             f"decrypt.day: {last_decrypt_version}"
         )
@@ -170,4 +203,5 @@ async def on_ready():
     client.loop.create_task(check_updates())
 
 client.run(TOKEN)
+
 
