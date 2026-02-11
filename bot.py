@@ -70,14 +70,15 @@ def get_appstore_version():
 def get_decrypt_version():
     try:
         r = requests.get(DECRYPT_URL, headers=HEADERS, timeout=10)
+        text = r.text
 
-        # Match the Version label specifically
-        match = re.search(r"Version\s*</[^>]+>\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", r.text)
+        # Match any 4-part version number like 1.59.4.2297
+        match = re.search(r"\b\d+\.\d+\.\d+\.\d+\b", text)
 
         if match:
-            return match.group(1)
+            return match.group(0)
 
-        print("Decrypt version not found near label.")
+        print("Decrypt version not found.")
     except Exception as e:
         print("Decrypt fetch error:", e)
 
@@ -207,6 +208,7 @@ async def on_ready():
         check_updates.start()
 
 bot.run(TOKEN)
+
 
 
 
