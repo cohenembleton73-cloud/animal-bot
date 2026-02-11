@@ -3,6 +3,30 @@ import requests
 import asyncio
 import re
 import os
+from flask import Flask
+import threading
+
+# =========================
+# START FLASK FIRST (IMPORTANT)
+# =========================
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+# Start web server BEFORE Discord
+threading.Thread(target=run_web, daemon=True).start()
+
+# =========================
+# DISCORD CONFIG
+# =========================
+
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = 1471171197290152099
 
@@ -17,6 +41,10 @@ client = discord.Client(intents=intents)
 
 last_apple_version = None
 last_decrypt_version = None
+
+# =========================
+# VERSION FUNCTIONS
+# =========================
 
 def get_appstore_version():
     try:
@@ -39,6 +67,10 @@ def get_decrypt_version():
         return None
     return None
 
+# =========================
+# UPDATE LOOP
+# =========================
+
 async def check_updates():
     global last_apple_version, last_decrypt_version
     await client.wait_until_ready()
@@ -46,7 +78,7 @@ async def check_updates():
 
     while not client.is_closed():
         try:
-            # 🍎 APP STORE CHECK (HYPE)
+            # Apple check
             app_v = get_appstore_version()
             if app_v:
                 if last_apple_version is None:
@@ -56,11 +88,11 @@ async def check_updates():
                         f"@everyone 🍎 **Animal Company Companion updated on the App Store!**\n\n"
                         f"Version: V{app_v}\n"
                         f"🔄 decrypt.day release coming soon...\n"
-                        f"Stay ready 👀"
+                        f"https://apps.apple.com/app/id6741173617"
                     )
                     last_apple_version = app_v
 
-            # 🔓 DECRYPT.DAY CHECK (LIVE)
+            # decrypt.day check
             dec_v = get_decrypt_version()
             if dec_v:
                 if last_decrypt_version is None:
@@ -85,3 +117,4 @@ async def on_ready():
     client.loop.create_task(check_updates())
 
 client.run(TOKEN)
+
