@@ -15,16 +15,15 @@ from datetime import datetime, UTC
 
 TOKEN = os.getenv("TOKEN")
 
-SERVER_ID = 123456789012345678  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
+SERVER_ID = 1467283531301392559  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
 CHANNEL_ID = 1471171197290152099
 
 TEST_MODE = True  # False = real @everyone
+CHECK_INTERVAL = 300  # 5 minutes
 
 APPLE_BUNDLE_ID = "com.animalcompany.companion"
 APPLE_LOOKUP = f"https://itunes.apple.com/lookup?bundleId={APPLE_BUNDLE_ID}"
 DECRYPT_URL = "https://decrypt.day/app/id6741173617"
-
-CHECK_INTERVAL = 300  # 5 minutes
 
 # =========================
 # RENDER KEEP ALIVE
@@ -48,6 +47,8 @@ threading.Thread(target=run_web, daemon=True).start()
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+guild = discord.Object(id=SERVER_ID)
 
 last_apple_version = None
 last_decrypt_version = None
@@ -123,10 +124,8 @@ def build_decrypt_embed(old, new):
     return embed
 
 # =========================
-# SLASH COMMANDS (GUILD ONLY)
+# SLASH COMMANDS (INSTANT GUILD SYNC)
 # =========================
-
-guild = discord.Object(id=SERVER_ID)
 
 @bot.tree.command(name="test", description="Simulate update embed", guild=guild)
 @app_commands.describe(type="Choose update type")
@@ -135,14 +134,12 @@ guild = discord.Object(id=SERVER_ID)
     app_commands.Choice(name="Decrypt", value="decrypt")
 ])
 async def test(interaction: discord.Interaction, type: app_commands.Choice[str]):
-
     if type.value == "apple":
         embed = build_apple_embed("59.0", "60.0")
-        await interaction.response.send_message(embed=embed)
-
-    elif type.value == "decrypt":
+    else:
         embed = build_decrypt_embed("59.0", "60.0")
-        await interaction.response.send_message(embed=embed)
+
+    await interaction.response.send_message(embed=embed)
 
 
 @bot.tree.command(name="status", description="Check tracker status", guild=guild)
@@ -164,7 +161,6 @@ async def status(interaction: discord.Interaction):
 
 @bot.tree.command(name="forcecheck", description="Manually check for updates", guild=guild)
 async def forcecheck(interaction: discord.Interaction):
-
     await interaction.response.defer()
     await run_update_check(force=True)
     await interaction.followup.send("Manual check complete.")
@@ -177,30 +173,39 @@ async def run_update_check(force=False):
     global last_apple_version, last_decrypt_version
 
     channel = bot.get_channel(CHANNEL_ID)
+    if channel is None:
+        print("Channel not found.")
+        return
 
     app_v = get_appstore_version()
     dec_v = get_decrypt_version()
 
+    # Apple check
     if app_v:
         if last_apple_version is None:
             last_apple_version = app_v
         elif app_v != last_apple_version or force:
             embed = build_apple_embed(last_apple_version, app_v)
+
             if TEST_MODE:
-    await channel.send(embed=embed)
-else:
-    await channel.send("@everyone", embed=embed)
+                await channel.send(embed=embed)
+            else:
+                await channel.send("@everyone", embed=embed)
+
             last_apple_version = app_v
 
+    # Decrypt check
     if dec_v:
         if last_decrypt_version is None:
             last_decrypt_version = dec_v
         elif dec_v != last_decrypt_version or force:
             embed = build_decrypt_embed(last_decrypt_version, dec_v)
+
             if TEST_MODE:
-    await channel.send(embed=embed)
-else:
-    await channel.send("@everyone", embed=embed)
+                await channel.send(embed=embed)
+            else:
+                await channel.send("@everyone", embed=embed)
+
             last_decrypt_version = dec_v
 
 
@@ -211,6 +216,7 @@ async def check_updates():
             await run_update_check()
         except Exception as e:
             print("Update error:", e)
+
         await asyncio.sleep(CHECK_INTERVAL)
 
 # =========================
@@ -234,5 +240,6 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
+
 
 
