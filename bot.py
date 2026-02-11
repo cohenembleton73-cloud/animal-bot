@@ -1,4 +1,3 @@
-print("SCRIPT VERSION 100% NEW")
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -6,11 +5,9 @@ import os
 from flask import Flask
 import threading
 
-TOKEN = os.getenv("TOKEN")
+print("SCRIPT VERSION 200% DEBUG")
 
-# =========================
-# RENDER KEEP-ALIVE
-# =========================
+TOKEN = os.getenv("TOKEN")
 
 app = Flask(__name__)
 
@@ -24,38 +21,24 @@ def run_web():
 
 threading.Thread(target=run_web, daemon=True).start()
 
-# =========================
-# DISCORD SETUP
-# =========================
-
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# =========================
-# SLASH COMMAND
-# =========================
-
-@bot.tree.command(name="test", description="Simple test command")
-async def test(interaction: discord.Interaction):
-    await interaction.response.send_message("Bot is responding correctly.")
-
-# =========================
-# READY EVENT
-# =========================
-
 @bot.event
 async def on_ready():
+    print("ON_READY TRIGGERED")
     print(f"Logged in as {bot.user}")
 
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} global commands.")
     except Exception as e:
-        print("Sync failed:", e)
+        print("SYNC FAILED:", e)
 
-# =========================
-# START
-# =========================
+@bot.tree.command(name="test", description="Test command")
+async def test(interaction: discord.Interaction):
+    print("TEST COMMAND CALLED")
+    await interaction.response.send_message("Bot is responding.")
 
 bot.run(TOKEN)
 
