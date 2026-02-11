@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import requests
 import asyncio
 import re
@@ -39,12 +40,13 @@ def run_web():
 threading.Thread(target=run_web, daemon=True).start()
 
 # =========================
-# DISCORD SETUP
+# DISCORD BOT SETUP
 # =========================
 
 intents = discord.Intents.default()
 intents.message_content = True
-client = discord.Client(intents=intents)
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 last_apple_version = None
 last_decrypt_version = None
@@ -75,7 +77,7 @@ def get_decrypt_version():
     return None
 
 # =========================
-# EMBED BUILDERS (ULTRA CLEAN)
+# EMBEDS
 # =========================
 
 def build_apple_embed(old, new):
@@ -85,53 +87,60 @@ def build_apple_embed(old, new):
         color=0x1DA1F2,
         timestamp=datetime.utcnow()
     )
-
     embed.add_field(
         name="📦 Version Upgrade",
-        value=f"```V{old}  ➜  V{new}```",
+        value=f"```V{old} ➜ V{new}```",
         inline=False
     )
-
-    embed.add_field(
-        name="⏳ Status",
-        value="decrypt.day release expected soon...",
-        inline=False
-    )
-
     embed.add_field(
         name="🔗 App Store",
-        value="[View on App Store](https://apps.apple.com/app/id6741173617)",
+        value="https://apps.apple.com/app/id6741173617",
         inline=False
     )
-
-    embed.set_footer(text="Animal Update Tracker • Monitoring Live")
-
+    embed.set_footer(text="Animal Update Tracker")
     return embed
-
 
 def build_decrypt_embed(old, new):
     embed = discord.Embed(
         title="🔓 NOW LIVE ON DECRYPT.DAY",
-        description="**Animal Company Companion is ready to download.**",
+        description="Download is officially available 🚀",
         color=0x00FF88,
         timestamp=datetime.utcnow()
     )
-
     embed.add_field(
         name="📦 Version Upgrade",
-        value=f"```V{old}  ➜  V{new}```",
+        value=f"```V{old} ➜ V{new}```",
         inline=False
     )
-
     embed.add_field(
-        name="🚀 Download Now",
-        value=f"[Click here to download]({DECRYPT_URL})",
+        name="🚀 Download",
+        value=DECRYPT_URL,
         inline=False
     )
-
-    embed.set_footer(text="Animal Update Tracker • Release Confirmed")
-
+    embed.set_footer(text="Animal Update Tracker")
     return embed
+
+# =========================
+# COMMANDS
+# =========================
+
+@bot.command()
+async def test(ctx, type: str):
+    if type.lower() == "apple":
+        embed = build_apple_embed("59.0", "60.0")
+        await ctx.send(embed=embed)
+
+    elif type.lower() == "decrypt":
+        embed = build_decrypt_embed("59.0", "60.0")
+        await ctx.send(embed=embed)
+
+@bot.command()
+async def status(ctx):
+    await ctx.send(
+        f"📊 Current Versions:\n"
+        f"Apple: {last_apple_version}\n"
+        f"decrypt.day: {last_decrypt_version}"
+    )
 
 # =========================
 # UPDATE LOOP
@@ -139,10 +148,10 @@ def build_decrypt_embed(old, new):
 
 async def check_updates():
     global last_apple_version, last_decrypt_version
-    await client.wait_until_ready()
-    channel = client.get_channel(CHANNEL_ID)
+    await bot.wait_until_ready()
+    channel = bot.get_channel(CHANNEL_ID)
 
-    while not client.is_closed():
+    while not bot.is_closed():
         try:
             app_v = get_appstore_version()
             if app_v:
@@ -173,35 +182,13 @@ async def check_updates():
 
         await asyncio.sleep(CHECK_INTERVAL)
 
-# =========================
-# COMMANDS
-# =========================
-
-@client.event
-async def on_message(message):
-    if message.author.bot:
-        return
-
-    if message.content == "!test apple":
-        embed = build_apple_embed("59.0", "60.0")
-        await message.channel.send(embed=embed)
-
-    if message.content == "!test decrypt":
-        embed = build_decrypt_embed("59.0", "60.0")
-        await message.channel.send(embed=embed)
-
-    if message.content == "!status":
-        await message.channel.send(
-            f"📊 Current Versions:\n"
-            f"Apple: {last_apple_version}\n"
-            f"decrypt.day: {last_decrypt_version}"
-        )
-
-@client.event
+@bot.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
-    client.loop.create_task(check_updates())
+    print(f"Logged in as {bot.user}")
+    bot.loop.create_task(check_updates())
 
-client.run(TOKEN)
+bot.run(TOKEN)
+
+
 
 
