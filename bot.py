@@ -13,11 +13,12 @@ from datetime import datetime, UTC
 # SETTINGS
 # =========================
 
-TEST_MODE = True  # Set False for real @everyone
-
 TOKEN = os.getenv("TOKEN")
+
+SERVER_ID = 1467283531301392559  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
 CHANNEL_ID = 1471171197290152099
-GUILD_ID = 1471171197290152099  # OPTIONAL: put your server ID here for instant slash sync
+
+TEST_MODE = True  # False = real @everyone
 
 APPLE_BUNDLE_ID = "com.animalcompany.companion"
 APPLE_LOOKUP = f"https://itunes.apple.com/lookup?bundleId={APPLE_BUNDLE_ID}"
@@ -26,7 +27,7 @@ DECRYPT_URL = "https://decrypt.day/app/id6741173617"
 CHECK_INTERVAL = 300  # 5 minutes
 
 # =========================
-# RENDER WEB SERVER (KEEP ALIVE)
+# RENDER KEEP ALIVE
 # =========================
 
 app = Flask(__name__)
@@ -84,49 +85,51 @@ def get_decrypt_version():
 def build_apple_embed(old, new):
     embed = discord.Embed(
         title="🍎 Companion IPA Update Detected",
-        description="**Animal Company Companion**",
+        description="Animal Company Companion",
         color=0x1DA1F2,
         timestamp=datetime.now(UTC)
     )
     embed.add_field(
-        name="📦 Version Upgrade",
+        name="Version Upgrade",
         value=f"```V{old} ➜ V{new}```",
         inline=False
     )
     embed.add_field(
-        name="🔗 App Store",
+        name="App Store",
         value="https://apps.apple.com/app/id6741173617",
         inline=False
     )
-    embed.set_footer(text="Animal Companion Update Tracker")
+    embed.set_footer(text="Animal Companion Tracker")
     return embed
 
 def build_decrypt_embed(old, new):
     embed = discord.Embed(
         title="🔓 IPA Now Live",
-        description="The decrypted IPA is officially available 🚀",
+        description="Decrypted IPA is available 🚀",
         color=0x00FF88,
         timestamp=datetime.now(UTC)
     )
     embed.add_field(
-        name="📦 Version Upgrade",
+        name="Version Upgrade",
         value=f"```V{old} ➜ V{new}```",
         inline=False
     )
     embed.add_field(
-        name="🚀 Download",
+        name="Download",
         value=DECRYPT_URL,
         inline=False
     )
-    embed.set_footer(text="Animal Companion Update Tracker")
+    embed.set_footer(text="Animal Companion Tracker")
     return embed
 
 # =========================
-# SLASH COMMANDS
+# SLASH COMMANDS (GUILD ONLY)
 # =========================
 
-@bot.tree.command(name="test", description="Simulate an update embed")
-@app_commands.describe(type="Choose which update to simulate")
+guild = discord.Object(id=SERVER_ID)
+
+@bot.tree.command(name="test", description="Simulate update embed", guild=guild)
+@app_commands.describe(type="Choose update type")
 @app_commands.choices(type=[
     app_commands.Choice(name="Apple", value="apple"),
     app_commands.Choice(name="Decrypt", value="decrypt")
@@ -142,11 +145,11 @@ async def test(interaction: discord.Interaction, type: app_commands.Choice[str])
         await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="status", description="Check current tracked versions")
+@bot.tree.command(name="status", description="Check tracker status", guild=guild)
 async def status(interaction: discord.Interaction):
 
     embed = discord.Embed(
-        title="📊 Tracker Status",
+        title="Tracker Status",
         color=0x5865F2,
         timestamp=datetime.now(UTC)
     )
@@ -159,17 +162,15 @@ async def status(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="forcecheck", description="Manually check for updates")
+@bot.tree.command(name="forcecheck", description="Manually check for updates", guild=guild)
 async def forcecheck(interaction: discord.Interaction):
 
     await interaction.response.defer()
-
     await run_update_check(force=True)
-
-    await interaction.followup.send("✅ Manual check completed.")
+    await interaction.followup.send("Manual check complete.")
 
 # =========================
-# UPDATE LOOP
+# UPDATE SYSTEM
 # =========================
 
 async def run_update_check(force=False):
@@ -180,28 +181,20 @@ async def run_update_check(force=False):
     app_v = get_appstore_version()
     dec_v = get_decrypt_version()
 
-    # Apple
     if app_v:
         if last_apple_version is None:
             last_apple_version = app_v
         elif app_v != last_apple_version or force:
             embed = build_apple_embed(last_apple_version, app_v)
-            if TEST_MODE:
-                await channel.send(embed=embed)
-            else:
-                await channel.send("@everyone", embed=embed)
+            await channel.send(embed=embed if TEST_MODE else "@everyone", embed=embed)
             last_apple_version = app_v
 
-    # Decrypt
     if dec_v:
         if last_decrypt_version is None:
             last_decrypt_version = dec_v
         elif dec_v != last_decrypt_version or force:
             embed = build_decrypt_embed(last_decrypt_version, dec_v)
-            if TEST_MODE:
-                await channel.send(embed=embed)
-            else:
-                await channel.send("@everyone", embed=embed)
+            await channel.send(embed=embed if TEST_MODE else "@everyone", embed=embed)
             last_decrypt_version = dec_v
 
 
@@ -211,23 +204,22 @@ async def check_updates():
         try:
             await run_update_check()
         except Exception as e:
-            print("Update loop error:", e)
-
+            print("Update error:", e)
         await asyncio.sleep(CHECK_INTERVAL)
 
 # =========================
 # READY EVENT
 # =========================
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
     try:
-        guild = discord.Object(id=1467283531301392559)  # Put your server ID here
         synced = await bot.tree.sync(guild=guild)
-        print(f"Synced {len(synced)} guild commands.")
+        print(f"Synced {len(synced)} commands to guild.")
     except Exception as e:
-        print("Sync error:", e)
+        print("SYNC FAILED:", e)
 
     bot.loop.create_task(check_updates())
 
@@ -236,9 +228,5 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
-
-
-
-
 
 
