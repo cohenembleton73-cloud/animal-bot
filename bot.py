@@ -1,3 +1,4 @@
+print("SCRIPT VERSION 100% NEW")
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -57,6 +58,7 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
+
 
 
 
