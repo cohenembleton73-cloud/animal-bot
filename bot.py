@@ -135,12 +135,14 @@ def build_decrypt_embed(old, new):
 ])
 async def test(interaction: discord.Interaction, type: app_commands.Choice[str]):
 
+    await interaction.response.defer()
+
     if type.value == "apple":
         embed = build_apple_embed("59.0", "60.0")
     else:
         embed = build_decrypt_embed("59.0", "60.0")
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 @bot.tree.command(name="status", description="Check tracker status", guild=guild)
@@ -241,4 +243,5 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
+
 
