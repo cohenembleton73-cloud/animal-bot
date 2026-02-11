@@ -218,14 +218,14 @@ async def check_updates():
 # =========================
 # READY EVENT
 # =========================
-
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
     try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands.")
+        guild = discord.Object(id=1467283531301392559)  # Put your server ID here
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Synced {len(synced)} guild commands.")
     except Exception as e:
         print("Sync error:", e)
 
@@ -236,6 +236,7 @@ async def on_ready():
 # =========================
 
 bot.run(TOKEN)
+
 
 
 
