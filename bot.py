@@ -15,7 +15,7 @@ from datetime import datetime, UTC
 
 TOKEN = os.getenv("TOKEN")
 
-SERVER_ID = 1467283531301392559  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
+SERVER_ID = 123456789012345678  # 🔥 PUT YOUR SERVER ID HERE (NO QUOTES)
 CHANNEL_ID = 1471171197290152099
 
 TEST_MODE = True  # False = real @everyone
@@ -186,7 +186,10 @@ async def run_update_check(force=False):
             last_apple_version = app_v
         elif app_v != last_apple_version or force:
             embed = build_apple_embed(last_apple_version, app_v)
-            await channel.send(embed=embed if TEST_MODE else "@everyone", embed=embed)
+            if TEST_MODE:
+    await channel.send(embed=embed)
+else:
+    await channel.send("@everyone", embed=embed)
             last_apple_version = app_v
 
     if dec_v:
@@ -194,7 +197,10 @@ async def run_update_check(force=False):
             last_decrypt_version = dec_v
         elif dec_v != last_decrypt_version or force:
             embed = build_decrypt_embed(last_decrypt_version, dec_v)
-            await channel.send(embed=embed if TEST_MODE else "@everyone", embed=embed)
+            if TEST_MODE:
+    await channel.send(embed=embed)
+else:
+    await channel.send("@everyone", embed=embed)
             last_decrypt_version = dec_v
 
 
