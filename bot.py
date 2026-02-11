@@ -202,11 +202,12 @@ async def status(ctx):
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"BOT STARTED INSTANCE: {bot.user}")
     if not check_updates.is_running():
         check_updates.start()
 
 bot.run(TOKEN)
+
 
 
 
