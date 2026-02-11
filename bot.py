@@ -9,14 +9,16 @@ from datetime import datetime
 
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = 1471171197290152099
-PING_ROLE_ID = None  # Add role ID if needed
 
-TEST_MODE = True
 CHECK_INTERVAL = 300  # 5 minutes
 
 APPLE_BUNDLE_ID = "com.animalcompany.companion"
 APPLE_LOOKUP = f"https://itunes.apple.com/lookup?bundleId={APPLE_BUNDLE_ID}"
 DECRYPT_URL = "https://decrypt.day/app/id6741173617"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
 
 # =========================
 # RENDER KEEP ALIVE
@@ -35,7 +37,7 @@ def run_server():
 threading.Thread(target=run_server, daemon=True).start()
 
 # =========================
-# BOT SETUP
+# DISCORD SETUP
 # =========================
 
 intents = discord.Intents.default()
@@ -48,26 +50,37 @@ last_decrypt_version = None
 initialised = False
 
 # =========================
-# FETCHERS
+# VERSION FETCHERS
 # =========================
 
 def get_appstore_version():
     try:
-        r = requests.get(APPLE_LOOKUP, timeout=10)
+        r = requests.get(APPLE_LOOKUP, headers=HEADERS, timeout=10)
+        print("Apple status:", r.status_code)
         data = r.json()
-        if data["resultCount"] > 0:
+        if data.get("resultCount", 0) > 0:
             return data["results"][0]["version"]
-    except:
-        return None
+        else:
+            print("Apple returned 0 results")
+    except Exception as e:
+        print("Apple fetch error:", e)
+    return None
+
 
 def get_decrypt_version():
     try:
-        r = requests.get(DECRYPT_URL, timeout=10)
-        match = re.search(r"Version[: ]*([0-9A-Za-z\.\-]+)", r.text)
+        r = requests.get(DECRYPT_URL, headers=HEADERS, timeout=10)
+        print("Decrypt status:", r.status_code)
+
+        # More flexible regex
+        match = re.search(r"([0-9]+\.[0-9]+(\.[0-9]+)?)", r.text)
         if match:
-            return match.group(1).strip()
-    except:
-        return None
+            return match.group(1)
+        else:
+            print("Decrypt regex failed")
+    except Exception as e:
+        print("Decrypt fetch error:", e)
+    return None
 
 # =========================
 # EMBEDS
@@ -89,6 +102,7 @@ def apple_embed(old, new):
     embed.set_footer(text="Animal Companion Tracker • App Store")
     return embed
 
+
 def decrypt_embed(old, new):
     embed = discord.Embed(
         title="🔓 IPA Now Available",
@@ -106,7 +120,7 @@ def decrypt_embed(old, new):
     return embed
 
 # =========================
-# UPDATE LOOP (SAFE VERSION)
+# UPDATE LOOP (SAFE)
 # =========================
 
 @tasks.loop(seconds=CHECK_INTERVAL)
@@ -120,7 +134,7 @@ async def check_updates():
     apple_v = get_appstore_version()
     decrypt_v = get_decrypt_version()
 
-    # First run → just store versions, don't send
+    # First run: cache only
     if not initialised:
         last_apple_version = apple_v
         last_decrypt_version = decrypt_v
@@ -128,7 +142,7 @@ async def check_updates():
         print("Initial version cache set.")
         return
 
-    # Apple Update
+    # Apple update
     if apple_v and apple_v != last_apple_version:
         embed = apple_embed(last_apple_version, apple_v)
         msg = await channel.send(embed=embed)
@@ -136,7 +150,7 @@ async def check_updates():
         await msg.add_reaction("🔥")
         last_apple_version = apple_v
 
-    # Decrypt Update
+    # Decrypt update
     if decrypt_v and decrypt_v != last_decrypt_version:
         embed = decrypt_embed(last_decrypt_version, decrypt_v)
         msg = await channel.send(embed=embed)
@@ -158,15 +172,17 @@ async def status(ctx):
         color=0x5865F2,
         timestamp=datetime.utcnow()
     )
-    embed.add_field(name="🍎 App Store", value=f"`{apple_v or 'Unknown'}`", inline=False)
-    embed.add_field(name="🔓 decrypt.day", value=f"`{decrypt_v or 'Unknown'}`", inline=False)
+
+    embed.add_field(name="🍎 App Store", value=f"`{apple_v or 'Unavailable'}`", inline=False)
+    embed.add_field(name="🔓 decrypt.day", value=f"`{decrypt_v or 'Unavailable'}`", inline=False)
+
     embed.set_footer(text="Real-time version check")
 
     await ctx.send(embed=embed)
 
 @bot.command()
 async def forcecheck(ctx):
-    await ctx.send("Checking manually...")
+    await ctx.send("Manual check started...")
     await check_updates()
     await ctx.send("Manual check complete.")
 
@@ -181,6 +197,8 @@ async def on_ready():
         check_updates.start()
 
 bot.run(TOKEN)
+
+
 
 
 
